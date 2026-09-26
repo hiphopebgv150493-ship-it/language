@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#665cf2" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Language Lab" />
+<meta name="description" content="Diccionario y cuaderno personal para estudiar idiomas." />
+<title>Language Lab</title>
+<script src="https://cdn.tailwindcss.com/"></script>
+<link rel="stylesheet" href="styles.css" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/svg+xml" href="app-icon.svg" />
+<link rel="apple-touch-icon" href="app-icon-192.png" />
+
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<!-- ============ SCREEN: PROFILES ============ -->
+<div id="profileScreen" class="min-h-screen flex items-center justify-center p-6">
+  <button id="darkToggleHome" onclick="toggleDark()" class="theme-home-toggle" type="button" aria-label="Cambiar modo claro u oscuro" title="Cambiar modo claro u oscuro">🌙</button>
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-500 text-white text-3xl mb-3 shadow-lg">📚</div>
+      <h1 class="text-3xl font-bold text-slate-800">Language Lab</h1>
+      <p class="text-slate-500 mt-1">Diccionario &amp; Estudio Personal</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-xl p-6">
+      <h2 class="font-semibold text-slate-700 mb-3">Perfiles</h2>
+      <div id="profileList" class="space-y-2 mb-4 max-h-60 overflow-y-auto"></div>
+      <div class="flex gap-2">
+        <input id="newProfileName" type="text" placeholder="Nuevo perfil..." class="flex-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"/>
+        <button onclick="createProfile()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg px-4 py-2 font-medium">Crear</button>
+      </div>
+    </div>
+    <div class="admin-entry mt-4 rounded-2xl p-5">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="admin-mark">◆</div>
+        <div>
+          <h2 class="font-semibold text-slate-800">Acceso administrador</h2>
+          <p class="text-xs text-slate-500">Panel privado de control</p>
+        </div>
+      </div>
+      <form onsubmit="event.preventDefault();loginAdmin()" class="space-y-3">
+        <input id="adminUsername" autocomplete="username" class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="ID de administrador" aria-label="ID de administrador"/>
+        <input id="adminPassword" type="password" autocomplete="current-password" class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Contraseña" aria-label="Contraseña"/>
+        <button class="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white py-2 font-medium">Iniciar sesión</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN: APP ============ -->
+<div id="app" class="hidden h-screen flex overflow-hidden">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside id="desktopSidebar" class="desktop-sidebar w-72 bg-white border-r border-slate-200 flex flex-col shrink-0 hidden md:flex">
+    <div class="p-4 border-b border-slate-200 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center text-lg font-bold" id="avatarInitial">P</div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold truncate" id="profileNameSidebar">Perfil</div>
+        <div class="text-xs text-slate-400 flex items-center gap-1">
+          <span onclick="toggleProfiles()" class="text-indigo-500 hover:underline cursor-pointer">Cambiar</span>
+          <span>·</span>
+          <span id="profileStats">0 dicc</span>
+        </div>
+      </div>
+      <button onclick="toggleDark()" id="darkToggleSide" title="Modo oscuro / claro" class="text-slate-400 hover:text-slate-600 text-lg leading-none mr-1">🌙</button>
+      <div class="relative">
+        <button onclick="dropMenu.toggle()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">⋯</button>
+        <div id="menuDots" class="hidden absolute right-0 mt-2 w-52 bg-white border rounded-xl shadow-xl p-1 z-30 fade">
+          <button onclick="exportExcel()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm">⬇️ Descargar Excel</button>
+          <label for="importInput" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm cursor-pointer">⬆️ Importar Excel</label>
+          <button onclick="openSettings()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm">⚙️ Perfil y contenido</button>
+          <div class="my-1 border-t border-slate-100"></div>
+          <button id="deleteProfileMenuItem" onclick="deleteActiveProfile()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-500 text-sm">🗑️ Borrar perfil</button>
+        </div>
+      </div>
+    </div>
+    <div class="p-4 flex-1 overflow-y-auto">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Diccionarios</span>
+        <button onclick="addDictModal()" title="Nuevo diccionario" class="text-slate-500 hover:text-indigo-600 text-lg leading-none">＋</button>
+      </div>
+      <div id="dictList" class="space-y-1"></div>
+    </div>
+
+    <div class="p-4 border-t border-slate-200">
+      <div id="studySummary" class="text-center rounded-xl bg-indigo-50 text-indigo-700 py-3 px-2"></div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <!-- mobile top bar -->
+    <div class="md:hidden bg-white border-b border-slate-200 p-3 flex items-center gap-2">
+      <button onclick="toggleMobileSidebar()" class="text-slate-500 text-2xl leading-none px-1">☰</button>
+      <div class="w-8 h-8 rounded-lg bg-indigo-500 text-white flex items-center justify-center text-sm font-bold" id="avatarInitialMobile">P</div>
+      <span class="font-semibold" id="profileNameMobile">Perfil</span>
+      <button onclick="toggleDark()" id="darkToggleMob" title="Modo oscuro / claro" class="ml-auto text-slate-500 text-lg leading-none px-1">🌙</button>
+    </div>
+
+    <!-- tabs -->
+    <nav class="bg-white border-b border-slate-200 px-4 py-3 flex gap-2 overflow-x-auto shrink-0">
+      <button id="desktopSidebarToggle" type="button" onclick="toggleDesktopSidebar()" class="desktop-sidebar-toggle hidden md:inline-flex" aria-controls="desktopSidebar" aria-expanded="true" aria-label="Ocultar menú lateral" title="Ocultar menú lateral">◀</button>
+      <button data-tab="dictionary" class="tab-btn active border rounded-full px-5 py-1.5 text-sm font-medium border-slate-300 hover:bg-slate-100">Diccionario</button>
+      <button data-tab="songs" class="tab-btn border rounded-full px-5 py-1.5 text-sm font-medium border-slate-300 hover:bg-slate-100">Songs</button>
+      <button data-tab="notebook" class="tab-btn border rounded-full px-5 py-1.5 text-sm font-medium border-slate-300 hover:bg-slate-100">Cuaderno Personal</button>
+      <button id="adminTabButton" data-tab="analytics" class="tab-btn hidden border rounded-full px-5 py-1.5 text-sm font-medium border-slate-300 hover:bg-slate-100">Analítica de Usuarios</button>
+    </nav>
+
+    <!-- dictionary tab -->
+    <section id="tab-dictionary" class="flex-1 overflow-y-auto p-4 md:p-6">
+      <div class="flex flex-col lg:flex-row gap-4 h-full">
+        <!-- dictionary list (mobile replaces sidebar) -->
+        <aside class="md:hidden lg:w-64">
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold uppercase text-slate-400">Diccionarios</span>
+              <button onclick="addDictModal()" class="text-slate-500 hover:text-indigo-600">＋</button>
+            </div>
+            <div id="dictListMobile" class="space-y-1"></div>
+          </div>
+        </aside>
+
+        <div class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+          <div class="p-4 border-b border-slate-200">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+              <h2 class="text-xl font-bold truncate" id="activeDictTitle">Diccionario</h2>
+              <div class="sm:ml-auto flex gap-2 flex-wrap">
+                <button onclick="openWordModal()" class="bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center gap-1">＋ Añadir</button>
+                <button onclick="copyDictTo()" class="bg-slate-100 hover:bg-slate-200 rounded-lg px-3 py-2 text-sm font-medium">✂️ Copiar a…</button>
+                <button onclick="deleteSelected()" class="bg-slate-100 hover:bg-red-100 hover:text-red-600 rounded-lg px-3 py-2 text-sm font-medium">🗑️ Borrar</button>
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <div class="flex-1 relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                <input id="wordSearch" oninput="renderWords()" placeholder="Buscar frase o significado..." class="w-full pl-9 pr-10 rounded-lg border border-slate-300 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"/>
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-300">⌫</span>
+              </div>
+              <select id="folderFilter" onchange="renderWords()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Todas las carpetas</option>
+              </select>
+              <select id="studyFilter" onchange="renderWords()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">Estudio: todos</option>
+                <option value="today">Estudiado hoy</option>
+                <option value="not">Sin estudiar hoy</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex-1 overflow-y-auto">
+            <div class="divide-y divide-slate-100" id="wordsList"></div>
+            <div id="wordsEmpty" class="hidden text-center text-slate-400 py-16">
+              <div class="text-5xl mb-3">🗂️</div>
+              <p id="wordsEmptyText">Este diccionario está vacío. Añade tu primera frase.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- songs tab -->
+    <section id="tab-songs" class="flex-1 overflow-hidden p-4 md:p-6 hidden">
+      <div class="flex flex-col lg:flex-row gap-4 h-full">
+        <aside class="w-full lg:w-72 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden shrink-0">
+          <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="font-bold">🎵 Songs</h3>
+            <button onclick="openSongModal()" class="text-indigo-500 hover:text-indigo-700 font-medium text-sm">＋ Nueva</button>
+          </div>
+          <div class="p-3 border-b border-slate-100">
+            <input id="songSearch" oninput="renderSongList()" placeholder="Buscar artista o título..." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"/>
+          </div>
+          <div id="songList" class="flex-1 overflow-y-auto p-2"></div>
+        </aside>
+        <div class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+          <div id="songEditorEmpty" class="flex-1 flex flex-col items-center justify-center text-slate-400 p-6">
+            <div class="text-6xl mb-4">🎤</div>
+            <p class="text-lg">Selecciona o crea una canción</p>
+            <p class="text-sm mt-1">Selecciona una frase para resaltarla, anotarla o vincularla.</p>
+          </div>
+          <div id="songEditorWrap" class="hidden flex-1 flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+              <div>
+                <h3 class="font-bold truncate" id="songEditorTitle">Canción</h3>
+                <span id="songEditorArtist" class="text-sm text-slate-500"></span>
+              </div>
+            </div>
+            <div contenteditable="true" id="songEditor" class="editor flex-1 overflow-y-auto p-5 text-lg" data-placeholder=""></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- notebook tab -->
+    <section id="tab-notebook" class="flex-1 overflow-hidden p-4 md:p-6 hidden">
+      <div class="flex flex-col lg:flex-row gap-4 h-full">
+        <aside class="w-full lg:w-72 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden shrink-0">
+          <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+            <h3 class="font-bold">📔 Cuaderno</h3>
+            <div class="flex items-center gap-2">
+              <button onclick="openNotebookFolderModal()" class="text-slate-500 hover:text-indigo-700 font-medium text-sm">＋ Carpeta</button>
+              <button onclick="newNotebookEntry()" class="text-indigo-500 hover:text-indigo-700 font-medium text-sm">＋ Nota</button>
+            </div>
+          </div>
+          <div id="noteList" class="flex-1 overflow-y-auto p-2"></div>
+        </aside>
+        <div class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+          <div id="nbEmpty" class="flex-1 flex flex-col items-center justify-center text-slate-400 p-6">
+            <div class="text-6xl mb-4">✍️</div>
+            <p class="text-lg">Redacta tus apuntes de estudio</p>
+            <p class="text-sm mt-1">Resalta texto con colores, añade notas y vínculos.</p>
+          </div>
+          <div id="nbWrap" class="hidden flex-1 flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+              <input id="nbTitle" class="font-bold text-lg flex-1 min-w-40 bg-transparent border-b border-transparent focus:border-indigo-400 focus:outline-none" placeholder="Título de la nota"/>
+              <select id="nbFolderSelect" onchange="moveActiveNote(this.value)" class="max-w-40 bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs" aria-label="Carpeta de la nota"></select>
+            </div>
+            <div contenteditable="true" id="nbEditor" class="editor flex-1 overflow-y-auto p-5 text-lg" data-placeholder="Escribe en el idioma de estudio…"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-analytics" class="flex-1 overflow-y-auto p-4 md:p-8 hidden">
+      <div class="mx-auto max-w-6xl">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[.2em] text-indigo-500">Control de plataforma</p>
+            <h2 class="text-2xl font-bold mt-1">Analítica de Usuarios</h2>
+            <p class="text-xs text-slate-400 mt-1">Actividad de perfiles registrada en este navegador.</p>
+          </div>
+          <div id="analyticsSummary" class="analytics-summary"></div>
+        </div>
+        <div id="analyticsNotice" class="analytics-notice hidden mb-4" role="status" aria-live="polite"></div>
+        <div class="analytics-table-shell rounded-2xl overflow-hidden border border-slate-200 shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="analytics-table w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Primer acceso</th>
+                  <th>Último acceso</th>
+                  <th>Última revisión</th>
+                </tr>
+              </thead>
+              <tbody id="analyticsRows"></tbody>
+            </table>
+          </div>
+          <div id="analyticsEmpty" class="hidden text-center text-slate-400 py-12">Aún no hay actividad registrada.</div>
+        </div>
+        <div class="analytics-activity-shell mt-5 rounded-2xl border border-slate-200 p-4 md:p-5">
+          <h3 class="font-semibold mb-3">Inicios de sesión recientes</h3>
+          <div id="analyticsActivity" class="space-y-2"></div>
+          <p id="analyticsActivityEmpty" class="hidden text-sm text-slate-400">No hay inicios de sesión registrados.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<input id="importInput" type="file" aria-label="Seleccionar archivo Excel para importar" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="file-picker-input" onchange="handleImport(this)" />
+
+<!-- mobile sidebar overlay -->
+<div id="mobileOverlay" class="fixed inset-0 bg-black/40 hidden z-30" onclick="toggleMobileSidebar()"></div>
+<aside id="mobileSidebar" class="fixed top-0 left-0 h-full w-72 bg-white z-40 shadow-2xl -translate-x-full transition-transform flex flex-col md:hidden">
+  <div class="p-4 border-b border-slate-200 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center text-lg font-bold" id="avatarInitialMob">P</div>
+    <div class="flex-1">
+      <div class="font-semibold" id="profileNameMob">Perfil</div>
+      <div onclick="toggleProfiles()" class="text-xs text-indigo-500 cursor-pointer hover:underline">Cambiar perfil</div>
+    </div>
+    <button onclick="toggleMobileSidebar()" class="text-slate-500">✕</button>
+  </div>
+  <div class="p-3 border-b flex gap-2">
+    <button onclick="exportExcel()" class="flex-1 bg-slate-100 rounded-lg text-xs py-2">⬇️ Excel</button>
+    <label for="importInput" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" class="flex-1 bg-slate-100 rounded-lg text-xs py-2 text-center cursor-pointer">⬆️ Excel</label>
+    <button onclick="openSettings()" class="flex-1 bg-slate-100 rounded-lg text-xs py-2">⚙️ Perfil</button>
+  </div>
+  <div class="p-4 flex-1 overflow-y-auto">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-semibold uppercase text-slate-400">Diccionarios</span>
+      <button onclick="addDictModal()" class="text-slate-500 hover:text-indigo-600">＋</button>
+    </div>
+    <div id="dictListMobile2" class="space-y-1"></div>
+  </div>
+</aside>
+
+<!-- ============ WORD MODAL ============ -->
+<div id="wordModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeWordModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white">
+      <h3 class="text-lg font-bold" id="wordModalTitle">Añadir frase</h3>
+      <button onclick="closeWordModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-600">Frase <span class="text-red-400">*</span></label>
+        <input id="wPhrase" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej. Hello"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-600">Significado</label>
+        <textarea id="wMeaning" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej. Hola"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-600">Pronunciación</label>
+        <input id="wPron" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej. /həˈloʊ/"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-600">Multimedia (URL de audio/video)</label>
+        <input id="wMedia" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="https://…"/>
+        <div id="wMediaPrev" class="mt-2 hidden"></div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-600">Carpeta</label>
+        <select id="wFolder" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"></select>
+        <input id="wFolderNew" class="hidden mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Nombre de la nueva carpeta"/>
+      </div>
+    </div>
+    <div class="p-5 border-t border-slate-200 flex justify-end gap-2">
+      <button onclick="closeWordModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="saveWord()" class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeSettings()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-lg font-bold">Perfil y contenido</h3>
+      <button onclick="closeSettings()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5 space-y-4">
+      <div class="text-sm text-slate-500">Perfil local: <strong id="settingsProfileName" class="text-slate-700"></strong></div>
+      <div class="rounded-xl border border-slate-200 p-3">
+        <div class="font-medium text-sm text-slate-700">Importar desde Excel</div>
+        <p class="text-xs text-slate-500 mt-1 mb-3">El archivo debe incluir las hojas Diccionario, Canciones o Cuaderno.</p>
+        <label for="importInput" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" class="inline-block rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 text-sm font-medium cursor-pointer">⬆️ Seleccionar archivo Excel</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ WELCOME TUTORIAL ============ -->
+<div id="onboardingModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[80] items-center justify-center p-4">
+  <section class="onboarding-card w-full max-w-xl rounded-3xl p-6 md:p-8" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+    <div class="flex items-center justify-between gap-3">
+      <span id="onboardingProgress" class="text-xs font-semibold uppercase tracking-[.18em] text-indigo-500"></span>
+      <button onclick="skipOnboarding()" class="text-sm text-slate-400 hover:text-slate-700">Omitir</button>
+    </div>
+    <div class="onboarding-orbit" aria-hidden="true">✦</div>
+    <h2 id="onboardingTitle" class="text-2xl font-bold mt-4"></h2>
+    <p id="onboardingBody" class="text-slate-500 mt-2 leading-relaxed"></p>
+    <div class="mt-8 flex items-center justify-between">
+      <button id="onboardingBack" onclick="moveOnboarding(-1)" class="rounded-lg px-4 py-2 text-slate-500 hover:bg-slate-100">Atrás</button>
+      <button id="onboardingNext" onclick="moveOnboarding(1)" class="rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 font-medium">Siguiente</button>
+    </div>
+  </section>
+</div>
+
+<!-- ============ NOTE MODAL ============ -->
+<div id="noteModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeNoteModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-lg font-bold">Nota / traducción</h3>
+      <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5 space-y-2">
+      <div id="noteModalPhrase" class="text-sm text-slate-500"></div>
+      <textarea id="noteModalText" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Escribe una nota o traducción…"></textarea>
+    </div>
+    <div class="p-5 border-t border-slate-200 flex justify-end gap-2">
+      <button onclick="closeNoteModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="saveHighlightNote()" class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="editHighlightModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeEditHighlight()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-lg font-bold">Editar frase</h3>
+      <button onclick="closeEditHighlight()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5"><input id="editHighlightText" class="w-full rounded-lg border border-slate-300 px-3 py-2"/></div>
+    <div class="p-5 border-t border-slate-200 flex justify-end gap-2">
+      <button onclick="closeEditHighlight()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="saveHighlightText()" class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeConfirm()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm fade">
+    <div class="p-5">
+      <h3 class="text-lg font-bold mb-2">Confirmar</h3>
+      <p id="confirmMessage" class="text-sm text-slate-600"></p>
+    </div>
+    <div class="p-5 border-t border-slate-200 flex justify-end gap-2">
+      <button onclick="closeConfirm()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="runConfirmAction()" class="px-5 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FOLDER MODAL ============ -->
+<div id="folderModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeFolderModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-lg font-bold">Nueva carpeta</h3>
+      <button onclick="closeFolderModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <label class="block text-sm font-medium text-slate-600">Nombre de la carpeta</label>
+      <input id="folderName" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej. Saludos"/>
+    </div>
+    <div class="p-5 border-t flex justify-end gap-2">
+      <button onclick="closeFolderModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="saveFolder()" class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium">Crear</button>
+    </div>
+  </div>
+</div>
+
+<div id="notebookFolderModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeNotebookFolderModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-lg font-bold">Nueva subcarpeta</h3>
+      <button onclick="closeNotebookFolderModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <label class="block text-sm font-medium text-slate-600" for="notebookFolderParent">Dentro de</label>
+      <select id="notebookFolderParent" class="w-full rounded-lg border border-slate-300 px-3 py-2"></select>
+      <label class="block text-sm font-medium text-slate-600" for="notebookFolderName">Nombre</label>
+      <input id="notebookFolderName" class="w-full rounded-lg border border-slate-300 px-3 py-2" placeholder="Ej. Vocabulario"/>
+    </div>
+    <div class="p-5 border-t flex justify-end gap-2">
+      <button onclick="closeNotebookFolderModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="saveNotebookFolder()" class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DICT MODAL ============ -->
+<div id="dictModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeDictModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-lg font-bold" id="dictModalTitle">Nuevo diccionario</h3>
+      <button onclick="closeDictModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5 space-y-3">
+      <label class="block text-sm font-medium text-slate-600">Idioma / nombre</label>
+      <input id="dictName" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej. Inglés"/>
+      <label class="flex items-center gap-2 text-sm text-slate-600">
+        <input id="dictFolderYes" type="checkbox" class="rounded text-indigo-500"/> Crear carpeta por defecto
+      </label>
+    </div>
+    <div class="p-5 border-t flex justify-end gap-2">
+      <button onclick="closeDictModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="saveDict()" class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COPY-TO MODAL ============ -->
+<div id="copyModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeCopyModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-lg font-bold">Copiar / Mover frases</h3>
+      <button onclick="closeCopyModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-600 mb-1">Frases seleccionadas</label>
+        <div id="copyCount" class="text-sm text-slate-500">0 seleccionadas</div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-600 mb-1">Diccionario destino</label>
+        <select id="copyDictSelect" class="w-full rounded-lg border border-slate-300 px-3 py-2"></select>
+      </div>
+      <div>
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          <input id="copyMove" type="checkbox" class="rounded text-indigo-500"/> Mover (eliminar del origen)
+        </label>
+      </div>
+    </div>
+    <div class="p-5 border-t flex justify-end gap-2">
+      <button onclick="closeCopyModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="doCopy()" class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SONG MODAL ============ -->
+<div id="songModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeSongModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white">
+      <h3 class="text-lg font-bold" id="songModalTitle">Nueva canción</h3>
+      <button onclick="closeSongModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-5 space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-600">Artista</label>
+        <input id="sArtist" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej. The Beatles"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-600">Título</label>
+        <input id="sTitle" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Ej. Hey Jude"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1 text-slate-600">Letra</label>
+        <textarea id="sLyrics" rows="6" class="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Pega la letra aquí…"></textarea>
+      </div>
+    </div>
+    <div class="p-5 border-t flex justify-end gap-2">
+      <button onclick="closeSongModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancelar</button>
+      <button onclick="saveSong()" class="px-5 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-medium">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FLOATING MENU (highlight actions) ============ -->
+<div id="hlMenu" class="hidden fixed z-[60] bg-white border rounded-xl shadow-2xl w-64 fade">
+  <div class="p-2 border-b border-slate-100 space-y-1">
+    <div class="px-2 text-xs font-semibold uppercase text-slate-400 mb-1">Resaltar</div>
+    <div class="flex gap-1.5 px-2" id="hlMenuColors"></div>
+    <div class="px-2 text-xs font-semibold uppercase text-slate-400 mt-2 mb-1">Tamaño</div>
+    <div class="flex gap-1.5 px-2 items-center">
+      <button onclick="hlSetSize('1rem')" class="rounded-lg border border-slate-200 px-2 py-1 text-xs hover:bg-slate-100">Normal</button>
+      <button onclick="hlSetSize('1.35rem')" class="rounded-lg border border-slate-200 px-2 py-1 text-sm hover:bg-slate-100">Medio</button>
+      <button onclick="hlSetSize('1.7rem')" class="rounded-lg border border-slate-200 px-2 py-1 text-base hover:bg-slate-100">Grande</button>
+    </div>
+  </div>
+  <div class="p-2 space-y-1">
+    <button onclick="hlEditPhrase()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm flex items-center gap-2">✏️ Editar</button>
+    <button onclick="hlAddNote()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm flex items-center gap-2">📝 Crear nota</button>
+    <button onclick="hlLink()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm flex items-center gap-2">🔗 Enlazar</button>
+    <button onclick="hlSendToDict()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm flex items-center gap-2">📚 Enviar al diccionario</button>
+    <button id="hlUnlinkButton" onclick="removeLink()" class="hidden w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm flex items-center gap-2">↩️ Desvincular</button>
+    <button onclick="hlRemove()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 text-sm flex items-center gap-2">🗑️ Quitar subrayado</button>
+  </div>
+  <div id="hlMenuBadge" class="hidden p-2 border-t border-slate-100"></div>
+</div>
+
+<div id="smartPopover" class="hidden fixed z-[58] max-w-xs bg-white border border-indigo-100 rounded-xl shadow-xl p-3 text-sm" role="complementary" aria-label="Concordancias de frases"></div>
+
+<!-- ============ HIGHLIGHT DETAILS SIDEBAR ============ -->
+<div id="highlightSidebarOverlay" class="highlight-sidebar-overlay hidden" onclick="closeHighlightSidebar()" aria-hidden="true"></div>
+<aside id="highlightSidebar" class="highlight-sidebar" role="complementary" aria-label="Detalles de la frase subrayada" aria-hidden="true">
+  <div class="highlight-sidebar-header">
+    <div class="min-w-0">
+      <div class="text-xs font-semibold uppercase tracking-wide text-indigo-500">Frase subrayada</div>
+      <h2 id="highlightSidebarPhrase" class="mt-1 text-lg font-bold break-words"></h2>
+    </div>
+    <button type="button" onclick="closeHighlightSidebar()" class="drawer-close" aria-label="Cerrar panel">×</button>
+  </div>
+  <div class="highlight-sidebar-content">
+    <label for="highlightSidebarNote" class="block text-sm font-semibold mb-2">Nota</label>
+    <textarea id="highlightSidebarNote" rows="4" class="w-full rounded-xl border border-slate-300 p-3" placeholder="Añade una nota a esta frase…"></textarea>
+    <button type="button" onclick="saveSidebarHighlightNote()" class="w-full mt-2 rounded-xl bg-indigo-500 px-4 py-3 text-sm font-semibold text-white">Guardar nota</button>
+
+    <section class="mt-6">
+      <h3 class="text-sm font-semibold">Concordancias</h3>
+      <div id="highlightSidebarMatches" class="mt-2 space-y-2"></div>
+    </section>
+
+    <section class="mt-6">
+      <h3 class="text-sm font-semibold">Estilo de subrayado</h3>
+      <div id="highlightSidebarColors" class="highlight-sidebar-colors mt-2"></div>
+    </section>
+
+    <section class="mt-6">
+      <h3 class="text-sm font-semibold">Enlaces y edición</h3>
+      <div id="highlightSidebarLinks" class="mt-2 space-y-2"></div>
+      <div class="mt-3 grid grid-cols-2 gap-2">
+        <button type="button" onclick="hlEditPhrase()" class="drawer-action">✏️ Editar frase</button>
+        <button type="button" onclick="hlLink()" class="drawer-action">🔗 Gestionar enlace</button>
+        <button type="button" onclick="hlRemove()" class="drawer-action text-red-600">🗑️ Quitar subrayado</button>
+      </div>
+    </section>
+  </div>
+</aside>
+
+<!-- ============ LINK MODAL ============ -->
+<div id="linkModal" class="hidden fixed inset-0 bg-black/40 z-50 items-center justify-center p-4" onclick="if(event.target===this)closeLinkModal()">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col fade">
+    <div class="p-5 border-b border-slate-200 flex items-center justify-between">
+      <h3 class="text-lg font-bold">Vincular frase</h3>
+      <button onclick="closeLinkModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="p-4">
+      <input id="linkSearch" oninput="renderLinkResults()" placeholder="Buscar en diccionario / canciones…" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"/>
+    </div>
+    <div class="flex-1 overflow-y-auto p-2" id="linkResults">
+      <div class="text-slate-400 text-sm text-center py-6">Escribe para buscar. Elige "Sin vínculo" para quitar el enlace.</div>
+    </div>
+    <div class="p-2 border-t">
+      <button onclick="removeLink()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 text-sm">✖ Quitar vínculo actual</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg hidden z-[70] text-sm"></div>
+
+<script src="./xlsx.full.min.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((error) => {
+        console.error('No se pudo registrar el modo sin conexión:', error);
+      });
+    });
+  }
+</script>
+<script src="./app.js"></script>
+
+</body>
+</html>
