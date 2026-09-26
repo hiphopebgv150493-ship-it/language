@@ -1,7 +1,8 @@
-const CACHE_NAME = 'language-lab-static-v8';
+const CACHE_NAME = 'language-lab-static-v9';
 const APP_FILES = [
   './',
   './index.html',
+  './tailwind.css',
   './styles.css',
   './app.js',
   './xlsx.full.min.js',
@@ -11,31 +12,10 @@ const APP_FILES = [
   './app-icon-512.png',
   './sw.js'
 ];
-const REMOTE_FILES = [
-  'https://cdn.tailwindcss.com/'
-];
-
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(APP_FILES);
-
-    // Cache CDN scripts when the first install is online. Their failure does
-    // not prevent the app's local dictionary and notebook from working.
-    await Promise.allSettled(REMOTE_FILES.map(async url => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 9000);
-      try {
-        const response = await fetch(url, {
-          mode: 'no-cors',
-          cache: 'reload',
-          signal: controller.signal
-        });
-        if (response.ok || response.type === 'opaque') await cache.put(url, response);
-      } finally {
-        clearTimeout(timeout);
-      }
-    }));
     await self.skipWaiting();
   })());
 });
@@ -55,8 +35,7 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   const isAppRequest = url.origin === self.location.origin;
-  const isCachedCDN = REMOTE_FILES.includes(request.url);
-  if (!isAppRequest && !isCachedCDN) return;
+  if (!isAppRequest) return;
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
