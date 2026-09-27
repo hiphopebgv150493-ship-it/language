@@ -29,8 +29,10 @@ una actualización, recarga la página publicada; el service worker renueva la
 copia sin conexión con esta versión.
 
 GitHub Pages no ejecuta un servidor ni sincroniza perfiles. Cada navegador y
-dispositivo conserva sus propios datos; usa **Descargar Excel** e **Importar
-Excel** para trasladarlos. Instalar la app permite abrirla como aplicación y
+dispositivo conserva sus propios datos; usa **Descargar base de datos** y
+**Restaurar base de datos** para trasladar todos los perfiles en un archivo JSON.
+Las opciones de Excel permiten exportar el perfil activo o importar hojas de
+Diccionario, Canciones y Cuaderno. Instalar la app permite abrirla como aplicación y
 trabajar sin conexión tras la primera carga. iOS y Android pueden suspender o
 cerrar cualquier página en segundo plano; Language Lab guarda los cambios y
 recupera la última pestaña y el contenido cuando se vuelve a abrir.
