@@ -1,4 +1,4 @@
-const CACHE_NAME = 'language-lab-static-v9';
+const CACHE_NAME = 'language-lab-static-v11';
 const APP_FILES = [
   './',
   './index.html',
@@ -15,7 +15,10 @@ const APP_FILES = [
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(APP_FILES);
+    await Promise.all(APP_FILES.map(async file => {
+      try { await cache.add(file); }
+      catch (error) { console.warn('No se pudo guardar en caché:', file); }
+    }));
     await self.skipWaiting();
   })());
 });
@@ -37,36 +40,29 @@ self.addEventListener('fetch', event => {
   const isAppRequest = url.origin === self.location.origin;
   if (!isAppRequest) return;
 
-  if (request.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        const response = await fetch(request);
-        const cache = await caches.open(CACHE_NAME);
-        cache.put('./index.html', response.clone());
-        return response;
-      } catch {
-        return (await caches.match(request)) || (await caches.match('./index.html'));
-      }
-    })());
-    return;
-  }
-
   event.respondWith((async () => {
-    const cached = await caches.match(request);
-    if (cached) return cached;
     try {
       const response = await fetch(request);
-      if (isAppRequest && (response.ok || response.type === 'opaque')) {
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(request, response.clone());
+      if (response.ok) {
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+        } catch (error) {}
       }
       return response;
     } catch (error) {
-      if (isAppRequest) {
-        const fallback = await caches.match('./index.html');
-        if (fallback && request.destination === 'document') return fallback;
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      if (request.mode === 'navigate') {
+        const indexUrl = new URL('index.html', self.registration.scope);
+        const fallback = await caches.match(indexUrl);
+        if (fallback) return fallback;
       }
-      throw error;
+      return new Response('Sin conexión. Abre la aplicación cuando vuelvas a tener internet.', {
+        status: 503,
+        statusText: 'Offline',
+        headers: {'Content-Type': 'text/plain; charset=utf-8'}
+      });
     }
   })());
 });
