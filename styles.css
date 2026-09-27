@@ -252,6 +252,14 @@
     border:1px solid rgba(129,140,178,.24);border-radius:13px;background:rgba(255,255,255,.72);
     color:#625be0;font-size:14px;font-weight:700;
   }
+  .settings-menu-trigger{
+    display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;
+    border:1px solid rgba(129,140,178,.2);border-radius:12px;
+    background:rgba(255,255,255,.62);font-size:18px;line-height:1;
+  }
+  .settings-menu-trigger:hover{background:rgba(238,241,255,.9);}
+  .settings-menu-trigger:focus-visible{outline:2px solid #665cf2;outline-offset:2px;}
+  .dark .settings-menu-trigger{background:rgba(23,32,54,.82);border-color:rgba(153,169,219,.2);}
   .dark .desktop-sidebar-toggle{background:#172036;border-color:#394765;color:#bbb6ff;}
   .highlight-sidebar-overlay{
     position:fixed;inset:0;z-index:47;background:rgba(15,23,42,.34);
