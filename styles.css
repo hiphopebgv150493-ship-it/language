@@ -1,6 +1,7 @@
 :root{ --accent:#6366f1; }
   .file-picker-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;opacity:0;}
-  label[for="importInput"]:focus-visible{outline:2px solid #6366f1;outline-offset:3px;}
+  #settingsModal>div{max-height:90vh;overflow-y:auto;}
+  label[for="importInput"]:focus-visible,label[for="backupInput"]:focus-visible{outline:2px solid #6366f1;outline-offset:3px;}
   html,body{height:100%;}
   body{ font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   .hl{cursor:pointer; border-radius:0; padding:0 1px 1px; border-bottom:2px solid var(--hl-color,#a5b4fc); background-color:transparent!important; box-decoration-break:clone; -webkit-box-decoration-break:clone; transition:filter .15s,border-color .15s;}
