@@ -2996,6 +2996,64 @@ async function importExcelFile(file){
 }
 function slugify(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')||'perfil'; }
 
+
+/* ---------- Backup / restore (base de datos completa) ---------- */
+function exportAppBackup(){
+  if(!state.activeProfile) return toast('Selecciona un perfil');
+  const payload={
+    app:'Language Lab',
+    exportedAt:new Date().toISOString(),
+    state:state,
+    local:{
+      [LS_KEY]:storageGet(LS_KEY),
+      perfil_activo:storageGet('perfil_activo'),
+      perfil_activo_id:storageGet('perfil_activo_id'),
+      [DARK_KEY]:storageGet(DARK_KEY),
+      [ACTIVE_TAB_KEY]:storageGet(ACTIVE_TAB_KEY),
+      [DESKTOP_SIDEBAR_KEY]:storageGet(DESKTOP_SIDEBAR_KEY)
+    }
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=`language_lab_backup_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  toast('Respaldo descargado');
+}
+async function handleBackupImport(input){
+  const file=input.files?.[0];
+  input.value='';
+  if(!file) return;
+  const settings=document.getElementById('settingsModal');
+  if(settings && !settings.classList.contains('hidden')) closeSettings();
+  const sidebar=document.getElementById('mobileSidebar');
+  if(sidebar && !sidebar.classList.contains('-translate-x-full')) toggleMobileSidebar();
+  dropMenu.hide();
+  let payload;
+  try{
+    payload=JSON.parse(await file.text());
+  }catch(error){
+    return toast('No se pudo leer el archivo JSON');
+  }
+  const data=payload?.state||payload;
+  if(!data||typeof data!=='object'||!data.profiles) return toast('El archivo no es un respaldo válido de Language Lab');
+  openConfirm('¿Restaurar este respaldo? Se reemplazarán todos los datos de este dispositivo.',()=>{
+    state=data;
+    Object.values(state.profiles).forEach(normalizeProfile);
+    if(!state.profiles[state.activeProfile]) state.activeProfile=null;
+    if(state.activeProfile===ADMIN_PROFILE_ID) state.activeProfile=null;
+    state.activeDict=null; state.activeSong=null; state.activeNote=null;
+    invalidateDictionaryPhraseIndex();
+    save({immediate:true});
+    toast('Respaldo restaurado; recargando…');
+    setTimeout(()=>location.reload(),600);
+  });
+}
+
 /* ---------- misc UI ---------- */
 function toggleMobileSidebar(){
   const sb=document.getElementById('mobileSidebar');
@@ -3145,7 +3203,7 @@ Object.assign(window,{
   runConfirmAction,saveDict,saveFolder,saveHighlightNote,saveHighlightText,
   saveSong,saveWord,selectProfile,setActiveDict,setActiveNote,setActiveSong,showLinkedWord,
   songMenu,studyToday,switchTab,toggleDark,toggleMobileSidebar,toggleProfiles,toggleSongStudy,
-  deleteProfilePrompt,enterApp,linkCancel,closeModal,dropMenu,openNotebookFolderModal,
+  deleteProfilePrompt,enterApp,linkCancel,closeModal,dropMenu,openNotebookFolderModal,exportAppBackup,handleBackupImport,
   saveNotebookFolder,deleteNotebookFolder,moveActiveNote,moveOnboarding,skipOnboarding,
 });
 Object.assign(window,{
@@ -3208,7 +3266,7 @@ function bindStaticMarkupActions(){
       });
     });
   }
-  document.querySelectorAll('[data-keyboard-activate="import"]').forEach(element=>{
+  document.querySelectorAll('[data-keyboard-activate]').forEach(element=>{
     element.addEventListener('keydown',event=>{
       if(event.key!=='Enter'&&event.key!==' ') return;
       event.preventDefault();
