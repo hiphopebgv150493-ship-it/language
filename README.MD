@@ -17,6 +17,13 @@ la migración desde versiones anteriores que guardaban en `localStorage`.
 5. Abre **Actions** y espera a que la publicación de Pages termine con una marca
    verde. Usa la dirección que GitHub muestra en **Settings → Pages**.
 
+Si la página aparece sin formato o los botones no responden, comprueba en el
+repositorio que cada archivo conserva su contenido y su nombre exacto:
+`app.js` debe contener la lógica de la aplicación, `tailwind.css` debe contener
+reglas CSS y `sw.js` debe comenzar con `const CACHE_NAME`. Los tres archivos
+deben estar junto a `index.html`; GitHub Pages distingue mayúsculas y minúsculas.
+Después de sustituirlos, espera a que termine Pages y vuelve a cargar la web.
+
 Para un repositorio llamado `mi-app`, la dirección suele ser
 `https://TU-USUARIO.github.io/mi-app/`. La dirección `github.com/...` abre los
 archivos del repositorio, no la aplicación. Si el repositorio se llama
