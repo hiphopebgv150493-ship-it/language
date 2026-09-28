@@ -1,10 +1,10 @@
-const CACHE_NAME = 'language-lab-static-v16';
+const CACHE_NAME = 'language-lab-static-v17';
 const APP_FILES = [
   './',
   './index.html',
   './tailwind.css',
   './styles.css',
-  './app.js',
+  './app.js?v=3',
   './xlsx.full.min.js',
   './manifest.json',
   './app-icon.svg',
