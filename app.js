@@ -386,10 +386,18 @@ function renderProfiles(){
         <div class="text-xs text-slate-400">${nDicts} dicc · ${nSongs} canciones</div>
       </div>
       <div class="flex gap-1">
-        ${active?'<button onclick="event.stopPropagation();enterApp()" class="text-xs bg-indigo-500 text-white rounded-lg px-3 py-1.5">Entrar</button>'
-                :'<button onclick="event.stopPropagation();selectProfile(\''+id+'\')" class="text-xs bg-slate-800 text-white rounded-lg px-3 py-1.5">Usar</button>'}
-        <button onclick="event.stopPropagation();deleteProfilePrompt(\''+id+'\')" class="text-xs text-red-400 px-2">🗑️</button>
+        <button type="button" data-profile-action="use" class="text-xs ${active?'bg-indigo-500':'bg-slate-800'} text-white rounded-lg px-3 py-1.5">${active?'Entrar':'Usar'}</button>
+        <button type="button" data-profile-action="delete" aria-label="Borrar perfil ${escAttr(p.name)}" title="Borrar perfil" class="text-xs text-red-400 px-2">🗑️</button>
       </div>`;
+    row.querySelector('[data-profile-action="use"]').addEventListener('click',event=>{
+      event.stopPropagation();
+      if(active) enterApp();
+      else selectProfile(id);
+    });
+    row.querySelector('[data-profile-action="delete"]').addEventListener('click',event=>{
+      event.stopPropagation();
+      deleteProfilePrompt(id);
+    });
     row.onclick = ()=> selectProfile(id);
     list.appendChild(row);
   }
@@ -411,7 +419,7 @@ function createProfile(){
   if(state.activeProfile===p.id) enterApp();
 }
 function selectProfile(id){
-  if(id===ADMIN_PROFILE_ID) return;
+  if(id===ADMIN_PROFILE_ID || !state.profiles[id]) return;
   state.activeProfile = id;
   if(sel.dicts()[state.activeDict]===undefined) state.activeDict = null;
   if(sel.songs()[state.activeSong]===undefined) state.activeSong = null;
@@ -423,11 +431,20 @@ function selectProfile(id){
 }
 function deleteProfilePrompt(id){
   if(id===ADMIN_PROFILE_ID) return;
-  if(!confirm('¿Borrar el perfil '+ (state.profiles[id].name) +' y todos sus datos?')) return;
-  if(!Object.prototype.hasOwnProperty.call(state.profiles, id)) return;
+  const profile=state.profiles[id];
+  if(!profile) return;
+  if(!confirm('¿Borrar el perfil '+profile.name+' y todos sus datos?')) return;
+  const deletingActive=state.activeProfile===id;
+  if(deletingActive){
+    state.activeProfile=null;
+    state.activeDict=null;
+    state.activeSong=null;
+    state.activeNote=null;
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('profileScreen').classList.remove('hidden');
+  }
   delete state.profiles[id];
-  if(state.activeProfile===id){ state.activeProfile=null; state.activeDict=null; state.activeSong=null; state.activeNote=null; }
-  save(); renderProfiles();
+  save({immediate:true}); renderProfiles();
   toast('Perfil eliminado');
 }
 function deleteActiveProfile(){
@@ -1016,8 +1033,11 @@ function doCopy(){
   toast(move?`${moved} frases movidas`:`${moved} frases copiadas`);
 }
 function openWordModal(id){
+  const profile=state.profiles[state.activeProfile];
+  const dictionary=profile&&state.activeDict?profile.dictionaries[state.activeDict]:null;
+  if(!dictionary) return toast('Crea o selecciona un diccionario primero');
   state.editWordId = id||null;
-  const editing = id ? sel.dict().words[id] : null;
+  const editing = id ? dictionary.words[id] : null;
   document.getElementById('wordModalTitle').textContent = editing?'Editar frase':'Añadir frase';
   document.getElementById('wPhrase').value = editing?editing.phrase:'';
   document.getElementById('wMeaning').value = editing?editing.meaning:'';
@@ -1059,8 +1079,10 @@ function renderMediaPreview(url){
 }
 document.getElementById('wMedia').addEventListener('input',e=>renderMediaPreview(e.target.value));
 function saveWord(){
+  const profile=state.profiles[state.activeProfile];
+  const d=profile&&state.activeDict?profile.dictionaries[state.activeDict]:null;
+  if(!d) return toast('Crea o selecciona un diccionario primero');
   saveCurrentEditors();
-  const d = sel.dict();
   const phrase = document.getElementById('wPhrase').value.trim();
   if(!phrase){ return toast('La frase es obligatoria'); }
   const folderRaw = document.getElementById('wFolder').value;
