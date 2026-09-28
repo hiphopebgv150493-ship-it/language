@@ -58,7 +58,7 @@
         <button type="button" data-click-action="toggleDropMenu" aria-controls="menuDots" aria-expanded="false" aria-label="Abrir configuración y opciones" title="Configuración y opciones" class="settings-menu-trigger text-slate-500 hover:text-indigo-600">⚙️</button>
         <div id="menuDots" class="hidden absolute right-0 mt-2 w-52 bg-white border rounded-xl shadow-xl p-1 z-30 fade">
           <button data-click-action="exportAppBackup" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm">💾 Descargar base de datos</button>
-          <label for="backupInput" role="button" tabindex="0" data-keyboard-activate="backup" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm cursor-pointer">📥 Restaurar base de datos</label>
+          <label for="backupInput" role="button" tabindex="0" data-keyboard-activate="backup" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm cursor-pointer">📥 Restaurar JSON / importar Excel</label>
           <div class="my-1 border-t border-slate-100"></div>
           <button  data-click-action="exportExcel" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm">⬇️ Descargar Excel</button>
           <label for="importInput" role="button" tabindex="0"  data-keyboard-activate="import" class="block w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm cursor-pointer">⬆️ Importar Excel</label>
@@ -222,7 +222,7 @@
 </div>
 
 <input id="importInput" type="file" aria-label="Seleccionar archivo Excel para importar" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="file-picker-input" data-change-action="handleImport" data-action-param="element" />
-<input id="backupInput" type="file" aria-label="Seleccionar respaldo de la base de datos" accept=".json,application/json" class="file-picker-input" data-change-action="handleBackupImport" data-action-param="element" />
+<input id="backupInput" type="file" aria-label="Seleccionar archivo Excel o respaldo de la base de datos" accept=".json,.xlsx,.xls,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="file-picker-input" data-change-action="handleBackupImport" data-action-param="element" />
 
 <!-- mobile sidebar overlay -->
 <div id="mobileOverlay" class="fixed inset-0 bg-black/40 hidden z-30"  data-click-action="toggleMobileSidebar"></div>
@@ -237,7 +237,7 @@
   </div>
   <div class="p-3 border-b flex gap-2">
     <button data-click-action="exportAppBackup" class="flex-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs py-2">💾 Datos</button>
-    <label for="backupInput" role="button" tabindex="0" data-keyboard-activate="backup" class="flex-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs py-2 text-center cursor-pointer">📥 Restaurar</label>
+    <label for="backupInput" role="button" tabindex="0" data-keyboard-activate="backup" class="flex-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs py-2 text-center cursor-pointer">📥 JSON / Excel</label>
   </div>
   <div class="p-3 border-b flex gap-2">
     <button  data-click-action="exportExcel" class="flex-1 bg-slate-100 rounded-lg text-xs py-2">⬇️ Excel</button>
@@ -305,7 +305,7 @@
         <p class="text-xs text-slate-500 mt-1 mb-3">Incluye todos los perfiles, diccionarios, canciones y notas.</p>
         <div class="flex flex-wrap gap-2">
           <button data-click-action="exportAppBackup" class="rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-2 text-sm font-medium">💾 Descargar respaldo</button>
-          <label for="backupInput" role="button" tabindex="0" data-keyboard-activate="backup" class="rounded-lg bg-white border border-indigo-200 text-indigo-700 px-3 py-2 text-sm font-medium cursor-pointer">📥 Restaurar respaldo</label>
+          <label for="backupInput" role="button" tabindex="0" data-keyboard-activate="backup" class="rounded-lg bg-white border border-indigo-200 text-indigo-700 px-3 py-2 text-sm font-medium cursor-pointer">📥 Restaurar JSON o importar Excel</label>
         </div>
       </div>
       <div class="rounded-xl border border-slate-200 p-3">
@@ -590,7 +590,7 @@
 <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg hidden z-[70] text-sm"></div>
 
 <script src="./xlsx.full.min.js"></script>
-<script src="./app.js"></script>
+<script src="./app.js?v=3"></script>
 
 </body>
 </html>
