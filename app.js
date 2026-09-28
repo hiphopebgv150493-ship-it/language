@@ -438,7 +438,12 @@ function deleteProfilePrompt(id){
   if(id===ADMIN_PROFILE_ID) return;
   const profile=state.profiles[id];
   if(!profile) return;
-  if(!confirm('¿Borrar el perfil '+profile.name+' y todos sus datos?')) return;
+  openConfirm('¿Borrar el perfil '+profile.name+' y todos sus datos?',()=>deleteProfile(id));
+}
+function deleteProfile(id){
+  if(id===ADMIN_PROFILE_ID) return;
+  const profile=state.profiles[id];
+  if(!profile) return;
   const deletingActive=state.activeProfile===id;
   if(deletingActive){
     state.activeProfile=null;
@@ -612,7 +617,7 @@ function saveDict(){
   if(document.getElementById('dictFolderYes').checked) dd.folders.push('General');
   sel.dicts()[dd.id]=dd;
   state.activeDict=dd.id;
-  save(); renderDictList(); renderAll(); closeModal('dictModal');
+  save({immediate:true}); renderDictList(); renderAll(); closeModal('dictModal');
   toast('Diccionario creado');
 }
 function openDictModal(){ addDictModal(); }
@@ -1116,7 +1121,7 @@ function saveWord(){
   invalidateDictionaryPhraseIndex();
   delete state.editWordId;
   document.getElementById('wFolderNew').value='';
-  save(); closeModal('wordModal'); renderAll();
+  save({immediate:true}); closeModal('wordModal'); renderAll();
 }
 function editWord(id){ openWordModal(id); }
 function closeWordModal(){ closeModal('wordModal'); delete state.editWordId; }
@@ -1213,7 +1218,7 @@ function saveSong(){
   const s=newSong(artist,title,lyrics);
   sel.songs()[s.id]=s;
   state.activeSong=s.id;
-  save(); closeModal('songModal'); renderSongList();
+  save({immediate:true}); closeModal('songModal'); renderSongList();
   openSong(s.id);
 }
 function closeSongModal(){ closeModal('songModal'); }
@@ -2237,7 +2242,7 @@ function saveSidebarHighlightNote(){
   hlTarget.dataset.hasnote=value?'1':'';
   hlTarget.title=value?'Nota: '+value:'';
   saveCurrentEditors();
-  save();
+  save({immediate:true});
   showHighlightSidebar(hlTarget);
   toast(value?'Nota guardada':'Nota eliminada');
 }
@@ -2440,7 +2445,7 @@ function saveHighlightNote(){
   else delete hlTarget.dataset.note;
   hlTarget.dataset.hasnote=val?'1':'';
   hlTarget.title=val?'Nota: '+val:'';
-  saveCurrentEditors(); save(); closeNoteModal();
+  saveCurrentEditors(); save({immediate:true}); closeNoteModal();
   if(document.getElementById('highlightSidebar').classList.contains('open')) showHighlightSidebar(hlTarget);
   toast(val?'Nota guardada':'Nota eliminada');
 }
@@ -2460,7 +2465,7 @@ function saveHighlightText(){
   hlTarget.textContent=text;
   delete hlTarget.dataset.smartSources;
   delete hlTarget.dataset.smartPhrase;
-  saveCurrentEditors(); save(); closeEditHighlight();
+  saveCurrentEditors(); save({immediate:true}); closeEditHighlight();
   if(document.getElementById('highlightSidebar').classList.contains('open')) showHighlightSidebar(hlTarget);
 }
 function closeEditHighlight(){ closeModal('editHighlightModal'); }
@@ -2786,7 +2791,7 @@ function saveNotebookFolder(){
   if(folders.includes(path)) return toast('Esa carpeta ya existe');
   folders.push(path);
   activeNotebookFolder=path;
-  save();renderNoteList();closeNotebookFolderModal();
+  save({immediate:true});renderNoteList();closeNotebookFolderModal();
   toast('Subcarpeta creada');
 }
 function renameNotebookFolder(oldPath){
@@ -3263,7 +3268,7 @@ function saveFolder(){
   const d=sel.dict();
   if(!name||!d) return toast('Nombre inválido');
   if(!d.folders.includes(name)) d.folders.push(name);
-  save(); renderAll(); closeModal('folderModal');
+  save({immediate:true}); renderAll(); closeModal('folderModal');
   toast('Carpeta creada');
 }
 
@@ -3314,6 +3319,7 @@ Object.assign(window,{
   saveSong,saveWord,selectProfile,setActiveDict,setActiveNote,setActiveSong,showLinkedWord,
   songMenu,studyToday,switchTab,toggleDark,toggleMobileSidebar,toggleProfiles,toggleSongStudy,
   deleteProfilePrompt,enterApp,linkCancel,closeModal,dropMenu,openNotebookFolderModal,
+  deleteProfile,
   saveNotebookFolder,deleteNotebookFolder,moveActiveNote,moveOnboarding,skipOnboarding,
 });
 Object.assign(window,{
