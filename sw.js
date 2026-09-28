@@ -1,4 +1,4 @@
-const CACHE_NAME = 'language-lab-static-v14';
+const CACHE_NAME = 'language-lab-static-v16';
 const APP_FILES = [
   './',
   './index.html',
