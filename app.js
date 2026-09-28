@@ -2954,6 +2954,26 @@ function exportAppBackup(){
 function isBackupRecord(value){
   return value!==null&&typeof value==='object'&&!Array.isArray(value);
 }
+function isExcelFile(file){
+  return /\.(xlsx|xls)$/i.test(file.name||'') ||
+    ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-excel'].includes(file.type);
+}
+let xlsxFallbackPromise=null;
+function ensureXlsxLoaded(){
+  if(window.XLSX) return Promise.resolve(true);
+  if(!xlsxFallbackPromise){
+    xlsxFallbackPromise=new Promise(resolve=>{
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      script.onload=()=>resolve(Boolean(window.XLSX));
+      script.onerror=()=>resolve(false);
+      document.head.appendChild(script);
+    }).finally(()=>{
+      if(!window.XLSX) xlsxFallbackPromise=null;
+    });
+  }
+  return xlsxFallbackPromise;
+}
 function normalizeBackupState(value){
   if(!isBackupRecord(value)||!isBackupRecord(value.profiles)) throw new Error('La base de datos no tiene un formato válido');
   const profiles={};
@@ -2995,6 +3015,15 @@ function handleBackupImport(input){
   const file=input.files?.[0];
   input.value='';
   if(!file) return;
+  if(isExcelFile(file)){
+    const settings=document.getElementById('settingsModal');
+    if(settings&&!settings.classList.contains('hidden')) closeSettings();
+    const sidebar=document.getElementById('mobileSidebar');
+    if(sidebar&&!sidebar.classList.contains('-translate-x-full')) toggleMobileSidebar();
+    dropMenu.hide();
+    void importExcelFile(file);
+    return;
+  }
   void (async()=>{
     try{
       const buffer=await readFileAsArrayBuffer(file);
@@ -3030,7 +3059,7 @@ function restoreAppBackup(backup=pendingAppBackup){
 }
 async function exportExcel(){
   if(!state.activeProfile) return toast('Selecciona un perfil');
-  if(!window.XLSX) return toast('No se pudo cargar el exportador Excel');
+  if(!await ensureXlsxLoaded()) return toast('No se pudo cargar Excel. Comprueba internet o sube xlsx.full.min.js junto a index.html.');
   const profile=sel.profile();
   const data=tableRows(profile);
   const columns={
@@ -3070,7 +3099,7 @@ function readFileAsArrayBuffer(file){
   });
 }
 async function importExcelFile(file){
-  if(!window.XLSX) return toast('No se pudo cargar el lector Excel');
+  if(!await ensureXlsxLoaded()) return toast('No se pudo cargar Excel. Comprueba internet o sube xlsx.full.min.js junto a index.html.');
   const profile=sel.profile();
   if(!profile) return toast('Selecciona un perfil antes de importar');
   try{
