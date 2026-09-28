@@ -10,6 +10,7 @@ const STATE_DB_NAME = 'language-lab-storage';
 const STATE_DB_STORE = 'app';
 let stateDatabase = null;
 let stateDatabaseReady = false;
+let loadedLocalState = false;
 let persistenceTimer = null;
 let pendingPersistenceRevision = 0;
 let lastStoredRevision = 0;
@@ -67,6 +68,7 @@ function load(){
     if(raw){
       const d = JSON.parse(raw);
       if(d && d.profiles){
+        loadedLocalState = true;
         const savedProfileId=storageGet('perfil_activo_id');
         if(savedProfileId && d.profiles[savedProfileId]) d.activeProfile=savedProfileId;
         else if(perfilActual && d.profiles[perfilActual]) d.activeProfile = perfilActual;
@@ -133,14 +135,15 @@ async function initializePersistence(){
   if(!stateDatabase) return;
   Promise.resolve(navigator.storage?.persist?.()).catch(()=>{});
   const stored=await readStateDatabase(stateDatabase);
-  if(stored?.profiles){
+  if(stored?.profiles && !loadedLocalState){
     state=stored;
     Object.values(state.profiles).forEach(normalizeProfile);
     if(!state.profiles[state.activeProfile]) state.activeProfile=null;
   }
   stateDatabaseReady=true;
-  // Migrate the existing localStorage data on first use.
-  if(!stored&&storageGet(LS_KEY)) persistStateDatabase();
+  // A valid localStorage copy can be newer when an IndexedDB write failed.
+  // Keep it as the source of truth and repair IndexedDB from that copy.
+  if(loadedLocalState) persistStateDatabase();
 }
 function save(options={}){
   if(state.activeProfile && state.profiles[state.activeProfile]){
@@ -150,6 +153,8 @@ function save(options={}){
   }
   clearTimeout(persistenceTimer);
   if(options.immediate){
+    // Preserve the latest state across page suspension or a failed IDB transaction.
+    storageSet(LS_KEY, JSON.stringify(state));
     if(!persistStateDatabase()) storageSet(LS_KEY, JSON.stringify(state));
     return;
   }
