@@ -1,4 +1,4 @@
-const CACHE_NAME = 'language-lab-static-v13';
+const CACHE_NAME = 'language-lab-static-v14';
 const APP_FILES = [
   './',
   './index.html',
@@ -8,8 +8,6 @@ const APP_FILES = [
   './xlsx.full.min.js',
   './manifest.json',
   './app-icon.svg',
-  './app-icon-192.png',
-  './app-icon-512.png',
   './sw.js'
 ];
 self.addEventListener('install', event => {
